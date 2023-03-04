@@ -1,5 +1,58 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { ref } from 'vue';
+
+function generateSudoku(board = []) {
+  if(board.length === 0) board = generateSolveableSudoku();
+
+  let count = 0;
+
+  while (true) {
+
+    count++
+    
+    const emptyCells = shuffle(getEmptyCells(board));
+    
+    let uniqueSolution = true;
+
+    for (let i = 0; i < emptyCells.length; i++) {
+
+      const [row, col] = emptyCells[i];
+
+      const value = board[row][col];
+      board[row][col] = 0;
+
+      if (!hasUniqueSolution(board)) {
+
+        console.log(`Failed solve: ${count}`)
+    
+        board[row][col] = value;
+        uniqueSolution = false;
+        break;
+      }
+
+    }
+
+    if (uniqueSolution) {
+      const cells = [];
+
+      for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+          const value = board[row][col];
+          const readonly = value !== 0;
+          const selected = false;
+
+          cells.push({
+            value,
+            readonly,
+            selected,
+          });
+        }
+      }
+
+      return ref(cells);
+    }
+  }
+}
 
 function generateSolveableSudoku() {
   const board = Array.from({ length: 9 }, () =>
@@ -7,6 +60,32 @@ function generateSolveableSudoku() {
   );
   backtrack(board, 0, 0);
   return board;
+}
+
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+function getEmptyCells(board) {
+  const cells = [];
+
+  for (let row = 0; row < 9; row++) {
+    for (let col = 0; col < 9; col++) {
+      if (board[row][col] === 0) {
+        cells.push([row, col]);
+      }
+    }
+  }
+
+  return cells;
+}
+
+function hasUniqueSolution(board) {
+  return countSolutions(board) === 1;
 }
 
 function backtrack(board, row, col) {
@@ -62,75 +141,6 @@ function isValidValue(board, row, col, value) {
   return true;
 }
 
-function shuffle(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-}
-
-function generateSudoku() {
-  let board = generateSolveableSudoku();
-
-  while (true) {
-    const emptyCells = shuffle(getEmptyCells(board));
-
-    let uniqueSolution = true;
-
-    for (let i = 0; i < emptyCells.length; i++) {
-      const [row, col] = emptyCells[i];
-
-      const value = board[row][col];
-      board[row][col] = 0;
-
-      if (!hasUniqueSolution(board)) {
-        board[row][col] = value;
-        uniqueSolution = false;
-        break;
-      }
-    }
-
-    if (uniqueSolution) {
-      const cells = [];
-
-      for (let row = 0; row < 9; row++) {
-        for (let col = 0; col < 9; col++) {
-          const value = board[row][col];
-          const readonly = value !== 0;
-          const selected = false;
-
-          cells.push({
-            value,
-            readonly,
-            selected,
-          });
-        }
-      }
-
-      return ref(cells);
-    }
-  }
-}
-
-function hasUniqueSolution(board) {
-  return countSolutions(board) === 1;
-}
-
-function getEmptyCells(board) {
-  const cells = [];
-
-  for (let row = 0; row < 9; row++) {
-    for (let col = 0; col < 9; col++) {
-      if (board[row][col] === 0) {
-        cells.push([row, col]);
-      }
-    }
-  }
-
-  return cells;
-}
-
 function countSolutions(board) {
   let count = 0;
 
@@ -172,130 +182,63 @@ function countSolutions(board) {
   return count;
 }
 
-function selectCell(cell) {
+function selectCell(cell, slot) {
+
   if (selectedCell.value) {
     selectedCell.value.selected = false;
   }
 
   cell.selected = true;
   selectedCell.value = cell;
+
+  console.log(selectedCell.value, slot)
+}
+
+function generatePuzzle(board, n) {
+  // Remove n numbers from the board while ensuring that the resulting
+  // puzzle remains solvable
+  let count = 0;
+  let loop = 0;
+  while (count < n) {
+    const row = Math.floor(Math.random() * 9);
+    const col = Math.floor(Math.random() * 9);
+
+    loop++
+
+    if (board[row][col] === 0) {
+      continue;
+    }
+    
+    const savedValue = board[row][col];
+
+    board[row][col] = 0;
+
+    if (countSolutions(board) === 1) {
+      count++;
+
+    } else {
+
+      board[row][col] = savedValue;
+    }
+  }
+  return board;
 }
 
 function solveSudoku() {
   console.log('solve');
 }
 
-function generateEasySudoku(numEmptyCells = 40) {
-  let board = generateSolveableSudoku();
-
-  while (true) {
-    const emptyCells = shuffle(getEmptyCells(board));
-
-    let uniqueSolution = true;
-
-    for (let i = 0; i < emptyCells.length; i++) {
-      const [row, col] = emptyCells[i];
-
-      const value = board[row][col];
-      board[row][col] = 0;
-
-      if (!hasUniqueSolution(board) || !isSolvableWithBasicStrategy(board)) {
-        board[row][col] = value;
-        uniqueSolution = false;
-        break;
-      }
-    }
-
-    if (uniqueSolution) {
-      const cells = [];
-
-      for (let row = 0; row < 9; row++) {
-        for (let col = 0; col < 9; col++) {
-          const value = board[row][col];
-          const readonly = value !== 0;
-          const selected = false;
-
-          cells.push({
-            value,
-            readonly,
-            selected,
-          });
-        }
-      }
-
-      return ref(cells);
-    }
-  }
+function handleKeydown(event) {
+  console.log('xxx')
+  console.log(event)
 }
 
-// function generateEasySudoku(numEmptyCells = 40) {
-//   let board = generateSolveableSudoku();
+let board = generateSolveableSudoku()
 
-//   const emptyCells = shuffle(getEmptyCells(board));
+generatePuzzle(board, 53)
 
-//   for (let i = 0; i < numEmptyCells; i++) {
-//     const [row, col] = emptyCells[i];
-//     board[row][col] = 0;
-//   }
+let cells = generateSudoku(board);
 
-//   const cells = [];
-
-//   for (let row = 0; row < 9; row++) {
-//     for (let col = 0; col < 9; col++) {
-//       const value = board[row][col];
-//       const readonly = value !== 0;
-//       const selected = false;
-
-//       cells.push({
-//         value,
-//         readonly,
-//         selected
-//       });
-//     }
-//   }
-
-//   return ref(cells);
-// }
-
-function isSolvableWithBasicStrategy(board) {
-  let changed = true;
-
-  while (changed) {
-    changed = false;
-
-    for (let row = 0; row < 9; row++) {
-      for (let col = 0; col < 9; col++) {
-        if (board[row][col] === 0) {
-          const candidates = getCandidates(board, row, col);
-
-          if (candidates.length === 0) {
-            return false; // No valid candidate for this cell, so the puzzle is unsolvable
-          } else if (candidates.length === 1) {
-            board[row][col] = candidates[0];
-            changed = true;
-          }
-        }
-      }
-    }
-  }
-
-  return true; // All cells have been filled with basic strategy, so the puzzle is solvable
-}
-
-function getCandidates(board, row, col) {
-  const candidates = [];
-
-  for (let i = 1; i <= 9; i++) {
-    if (isValidValue(board, row, col, i)) {
-      candidates.push(i);
-    }
-  }
-
-  return candidates;
-}
-
-// let cells = generateSudoku();
-let cells = generateEasySudoku();
 let selectedCell = ref(null);
 </script>
 
@@ -320,6 +263,7 @@ let selectedCell = ref(null);
           'bg-yellow-200': cell.selected,
         }"
         @click="selectCell(cell, index + 1)"
+        @keydown="handleKeydown()"
       >
         {{ cell.value || '' }}
       </div>
