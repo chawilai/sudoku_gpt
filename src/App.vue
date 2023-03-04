@@ -1,35 +1,29 @@
 <script setup>
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 
 function generateSudoku(board = []) {
-  if(board.length === 0) board = generateSolveableSudoku();
+  if (board.length === 0) board = generateSolveableSudoku();
 
   let count = 0;
 
   while (true) {
+    count++;
 
-    count++
-    
     const emptyCells = shuffle(getEmptyCells(board));
-    
+
     let uniqueSolution = true;
 
     for (let i = 0; i < emptyCells.length; i++) {
-
       const [row, col] = emptyCells[i];
 
       const value = board[row][col];
       board[row][col] = 0;
 
       if (!hasUniqueSolution(board)) {
-
-        console.log(`Failed solve: ${count}`)
-    
         board[row][col] = value;
         uniqueSolution = false;
         break;
       }
-
     }
 
     if (uniqueSolution) {
@@ -42,6 +36,8 @@ function generateSudoku(board = []) {
           const selected = false;
 
           cells.push({
+            row,
+            col,
             value,
             readonly,
             selected,
@@ -183,15 +179,12 @@ function countSolutions(board) {
 }
 
 function selectCell(cell, slot) {
-
   if (selectedCell.value) {
     selectedCell.value.selected = false;
   }
 
   cell.selected = true;
   selectedCell.value = cell;
-
-  console.log(selectedCell.value, slot)
 }
 
 function generatePuzzle(board, n) {
@@ -203,21 +196,19 @@ function generatePuzzle(board, n) {
     const row = Math.floor(Math.random() * 9);
     const col = Math.floor(Math.random() * 9);
 
-    loop++
+    loop++;
 
     if (board[row][col] === 0) {
       continue;
     }
-    
+
     const savedValue = board[row][col];
 
     board[row][col] = 0;
 
     if (countSolutions(board) === 1) {
       count++;
-
     } else {
-
       board[row][col] = savedValue;
     }
   }
@@ -229,17 +220,47 @@ function solveSudoku() {
 }
 
 function handleKeydown(event) {
-  console.log('xxx')
-  console.log(event)
+  // console.log(event)
+  if (selectedCell.value && selectedCell.value.value == 0) {
+    if (['1', '2', '3', '4', '5', '6', '7', '8', '9'].includes(event.key)) { 
+      selectedCell.value.value = parseInt(event.key)
+
+      updateNumberTotal()
+    }
+    // console.log(event);
+    // console.log(event.keyCode);
+    // console.log(selectedCell.value.value);
+    // console.log(selectedCell.value.readonly);
+  }
 }
 
-let board = generateSolveableSudoku()
+function updateNumberTotal() {
+  const obj = {}      
+  for (let i = 1; i <= 9; i++) {
+    obj[`num_${i}`] = cells.value.map(item => item.value).filter(num => num === i).length;
+  }
 
-generatePuzzle(board, 53)
+  numberTotal.value = obj
+}
+
+function totalNumber(number) {
+  // return cells.value
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown);
+});
+
+let board = generateSolveableSudoku();
+
+generatePuzzle(board, 40);
 
 let cells = generateSudoku(board);
+let numberTotal = ref({});
 
-let selectedCell = ref(null);
+updateNumberTotal()
+
+let selectedCell = ref({});
 </script>
 
 <template>
@@ -259,13 +280,27 @@ let selectedCell = ref(null);
             (index + 1 > 45 && index + 1 <= 54),
           'border-l': (index + 1) % 3 === 0 && (index + 1) % 9 !== 0,
           'border-t': index >= 27 && index % 9 !== 0,
+          'bg-orange-100': selectedCell && (selectedCell.col === cell.col || selectedCell.row === cell.row),
+          'text-orange-400': selectedCell && (selectedCell.value === cell.value),
+          'bg-green-200': !cell.readonly && cell.value != 0,
           'bg-gray-100': cell.readonly,
           'bg-yellow-200': cell.selected,
         }"
         @click="selectCell(cell, index + 1)"
-        @keydown="handleKeydown()"
       >
         {{ cell.value || '' }}
+      </div>
+    </div>
+
+    <div class="w-full mb-10 bg-blue-100 border-2 border-black py-4 px-4 rounded-xl flex justify-around items-center">
+      <div v-for="i in 9">
+        <div 
+        class="bg-gray-400 text-white font-bold py-2 px-2 rounded-md"
+        :class="{
+          'bg-orange-500' : selectedCell && (selectedCell.value === i),
+          'bg-black' : numberTotal[`num_${i}`] == 9
+        }"
+        >{{ i }} : {{ numberTotal[`num_${i}`] }}</div>
       </div>
     </div>
 
