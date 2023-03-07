@@ -280,10 +280,6 @@ function updateNumberTotal() {
   numberTotal.value = obj;
 }
 
-onMounted(() => {
-  window.addEventListener('keydown', handleKeydown);
-});
-
 ///
 function solveSudoku(board) {
   const size = 9;
@@ -401,6 +397,10 @@ function newGame() {
   location.reload()
 }
 
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown);
+});
+
 let selectedCell = ref({});
 
 console.time('generate-puzzle');
@@ -412,25 +412,6 @@ console.timeEnd('generate-puzzle');
 let numberTotal = ref({});
 
 updateNumberTotal();
-
-function genEmptyGrid() {
-  let board = new Array(9);
-  for (let i = 0; i < 9; i++) {
-    board[i] = new Array(9).fill(0);
-  }
-
-  return board
-}
-
-let board1 = genEmptyGrid()
-let gen_board1 = generateSolveableSudoku(board1);
-let play_board1 = generatePuzzle(gen_board1, 40);
-console.log(board1)
-console.log(gen_board1)
-console.log(play_board1)
-// let board2 = genEmptyGrid()
-// console.log(board2)
-
 </script>
 
 <template>
