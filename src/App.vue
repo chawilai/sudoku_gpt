@@ -32,6 +32,8 @@ function generateSudoku(board = []) {
       for (let row = 0; row < 9; row++) {
         for (let col = 0; col < 9; col++) {
           const value = board[row][col];
+          let value_status = '';
+          if (value !== 0) value_status = 'default'
           const readonly = value !== 0;
           const selected = false;
 
@@ -40,6 +42,7 @@ function generateSudoku(board = []) {
             col,
             value,
             readonly,
+            value_status,
             selected,
           });
         }
@@ -245,18 +248,32 @@ function generatePuzzle(board, n) {
   return generated_board;
 }
 
+function checkValidInput(key) {
+  // pull valid board from solve function
+  let valid_board = solveSudoku(board)
+
+  if (valid_board[selectedCell.value.row][selectedCell.value.col] != key) {
+    selectedCell.value.value_status = 'wrong'
+    // selectedCell.value.value = 0
+  } else {
+    selectedCell.value.value_status = 'currect'
+  }
+  // console.log(valid_board, key, selectedCell.value)
+}
+
 function handleKeydown(event) {
-  // console.log(event)
-  if (selectedCell.value && selectedCell.value.value == 0) {
+  // console.log(event.key)
+  if (selectedCell.value && (selectedCell.value.value == 0 || selectedCell.value.value_status == 'wrong')) {
     if (['1', '2', '3', '4', '5', '6', '7', '8', '9'].includes(event.key)) {
       selectedCell.value.value = parseInt(event.key);
-
-      updateNumberTotal();
+      checkValidInput(event.key)
     }
-    // console.log(event);
-    // console.log(event.keyCode);
-    // console.log(selectedCell.value.value);
-    // console.log(selectedCell.value.readonly);
+    if (event.key == 'Backspace') { 
+      selectedCell.value.value = 0
+      selectedCell.value.value_status = ''
+    }
+
+    updateNumberTotal();
   }
 }
 
@@ -274,17 +291,6 @@ function updateNumberTotal() {
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown);
 });
-
-let board = generateSolveableSudoku();
-
-console.time('generate-puzzle');
-generatePuzzle(board, 30);
-console.timeEnd('generate-puzzle');
-
-let cells = generateSudoku(board);
-let numberTotal = ref({});
-
-updateNumberTotal();
 
 ///
 function solveSudoku(board) {
@@ -388,8 +394,8 @@ function animateSolution(answers) {
       return;
     }
 
-    cells.value[zeroCells[index].index].value =
-      answers[zeroCells[index].value.row][zeroCells[index].value.col];
+    cells.value[zeroCells[index].index].value = answers[zeroCells[index].value.row][zeroCells[index].value.col];
+    cells.value[zeroCells[index].index].value_status = 'currect'
 
       updateNumberTotal();
 
@@ -399,7 +405,21 @@ function animateSolution(answers) {
   const interval = setInterval(fillCell, delay);
 }
 
+function newGame() {
+  location.reload()
+}
+
 let selectedCell = ref({});
+
+console.time('generate-puzzle');
+let board = generateSolveableSudoku();
+generatePuzzle(board, 40);
+let cells = generateSudoku(board);
+console.timeEnd('generate-puzzle');
+
+let numberTotal = ref({});
+
+updateNumberTotal();
 </script>
 
 <template>
@@ -423,13 +443,14 @@ let selectedCell = ref({});
             selectedCell &&
             (selectedCell.col === cell.col || selectedCell.row === cell.row),
           'text-orange-400': selectedCell && selectedCell.value === cell.value,
-          'bg-green-200': !cell.readonly && cell.value != 0,
-          'bg-gray-100': cell.readonly,
+          'bg-green-200': !cell.readonly && cell.value != 0 && cell.value_status == 'currect',
+          'bg-red-400 text-red-900 font-bold': cell.value_status == 'wrong',
+          'bg-gray-300': cell.readonly,
           'bg-yellow-200': cell.selected,
         }"
         @click="selectCell(cell, index + 1)"
       >
-        {{ cell.value || '' }}
+        <span :class="{'invisible': !cell.value}">{{ cell.value }}</span>
       </div>
     </div>
 
@@ -458,7 +479,7 @@ let selectedCell = ref({});
     </button>
     <button
       class="block mx-auto px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-      @click="generateSudoku()"
+      @click="newGame()"
     >
       New Game
     </button>
