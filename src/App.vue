@@ -19,7 +19,7 @@ function generateSudoku(board = []) {
       const value = board[row][col];
       board[row][col] = 0;
 
-      if (!hasUniqueSolution(board)) {
+      if (countSolutions(board) !== 1) {
         board[row][col] = value;
         uniqueSolution = false;
         break;
@@ -81,10 +81,6 @@ function getEmptyCells(board) {
   }
 
   return cells;
-}
-
-function hasUniqueSolution(board) {
-  return countSolutions(board) === 1;
 }
 
 function backtrack(board, row, col) {
@@ -190,11 +186,7 @@ function selectCell(cell, slot) {
   selectedCell.value = cell;
 }
 
-function generatePuzzle(board, n) {
-  // Remove n numbers from the board while ensuring that the resulting
-  // puzzle remains solvable
-
-  let generated_board = board;
+function generatePuzzle(generated_board, n) {
   let puzzle = false;
 
   while (!puzzle) {
@@ -420,6 +412,25 @@ console.timeEnd('generate-puzzle');
 let numberTotal = ref({});
 
 updateNumberTotal();
+
+function genEmptyGrid() {
+  let board = new Array(9);
+  for (let i = 0; i < 9; i++) {
+    board[i] = new Array(9).fill(0);
+  }
+
+  return board
+}
+
+let board1 = genEmptyGrid()
+let gen_board1 = generateSolveableSudoku(board1);
+let play_board1 = generatePuzzle(gen_board1, 40);
+console.log(board1)
+console.log(gen_board1)
+console.log(play_board1)
+// let board2 = genEmptyGrid()
+// console.log(board2)
+
 </script>
 
 <template>
